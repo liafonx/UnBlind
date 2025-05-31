@@ -11,6 +11,17 @@ function G.UIDEF.UnBlind_current_blinds() -- called by the replaced bit of code.
 	}}
 end
 
+-- Helper function to get the correct vars for a blind's localization
+-- This matches the logic from blind.lua:set_text() to handle dynamic boss vars
+local function UnBlind_get_blind_vars(blind_config)
+	if blind_config.name == 'The Ox' then
+		return {localize(G.GAME.current_round.most_played_poker_hand, 'poker_hands')}
+	elseif blind_config.name == 'The Wheel' then
+		return {G.GAME.probabilities.normal or 1, 7}
+	end
+	return blind_config.vars or {}
+end
+
 function UnBlind_create_UIBox_blind(type) -- Main definition for the whole of the shop_sign replacement
 	local run_info = true
 	local disabled = false
@@ -50,7 +61,7 @@ function UnBlind_create_UIBox_blind(type) -- Main definition for the whole of th
 	end
 
 	G.GAME.round_resets.blind_ante = G.GAME.round_resets.blind_ante or G.GAME.round_resets.ante
-	local loc_target = localize{type = 'raw_descriptions', key = blind_choice.config.key, set = 'Blind', vars = {localize(G.GAME.current_round.most_played_poker_hand, 'poker_hands')}}
+	local loc_target = localize{type = 'raw_descriptions', key = blind_choice.config.key, set = 'Blind', vars = UnBlind_get_blind_vars(blind_choice.config)}
 	local loc_name = localize{type = 'name_text', key = blind_choice.config.key, set = 'Blind'}
 	local text_table = loc_target
 	local blind_col = get_blind_main_colour(G.GAME.round_resets.blind_choices[type])
@@ -167,18 +178,15 @@ function UnBlind_create_UIBox_blind_popup(blind, vars, blind_col) --definition f
 	local blind_text = {}
 
 	local _dollars = blind.dollars
-	local loc_target = localize{type = 'raw_descriptions', key = blind.key, set = 'Blind', vars = {localize(G.GAME.current_round.most_played_poker_hand, 'poker_hands')}}
-	-- get hands on the most_played_poker_hand. doesnt work with other mods yet. WOMP WOMP -s
+	local loc_target = localize{type = 'raw_descriptions', key = blind.key, set = 'Blind', vars = UnBlind_get_blind_vars(blind)}
 	local loc_name = localize{type = 'name_text', key = blind.key, set = 'Blind'}
 
-
-	 local ability_text = {}
-	 if loc_target then
+	local ability_text = {}
+	if loc_target then
 		for k, v in ipairs(loc_target) do
-			--sendDebugMessage("k: "..k.." v: "..v, "unblind◙◙◙")
-			ability_text[#ability_text + 1] = {n=G.UIT.R, config={align = "cm"}, nodes={{n=G.UIT.T, config={text = (k ==1 and blind.name == 'The Wheel' and '1' or '')..v, scale = 0.35, shadow = true, colour = G.C.WHITE}}}}
+			ability_text[#ability_text + 1] = {n=G.UIT.R, config={align = "cm"}, nodes={{n=G.UIT.T, config={text = v, scale = 0.35, shadow = true, colour = G.C.WHITE}}}}
 		end
-	 end
+	end
 	 local stake_sprite = get_stake_sprite(G.GAME.stake or 1, 0.4)
 	 blind_text[#blind_text + 1] =
 		{n=G.UIT.R, config={align = "cm", colour = G.C.CLEAR}, nodes={
